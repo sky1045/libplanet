@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Libplanet.Store.Trie;
 using Libplanet.Store.Trie.Nodes;
 using Serilog;
@@ -111,19 +112,26 @@ namespace Libplanet.Store
             _logger.Verbose("Started {MethodName}()", nameof(CopyStates));
             stopwatch.Start();
 
+            var tasks = new List<Task>();
             foreach (HashDigest<SHA256> stateRootHash in stateRootHashes)
             {
-                var stateTrie = new MerkleTrie(
-                    StateKeyValueStore,
-                    new HashNode(stateRootHash),
-                    Secure
-                );
-
-                foreach (var (key, value) in stateTrie.IterateNodeKeyValuePairs())
+                var task = Task.Run(() =>
                 {
-                    targetKeyValueStore.Set(key, value);
-                }
+                    var stateTrie = new MerkleTrie(
+                        StateKeyValueStore,
+                        new HashNode(stateRootHash),
+                        Secure
+                    );
+
+                    foreach (var (key, value) in stateTrie.IterateNodeKeyValuePairs())
+                    {
+                        targetKeyValueStore.Set(key, value);
+                    }
+                });
+                tasks.Add(task);
             }
+
+            Task.WhenAll(tasks).Wait();
 
             stopwatch.Stop();
             _logger.Debug(
