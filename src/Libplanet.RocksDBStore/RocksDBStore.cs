@@ -189,7 +189,7 @@ namespace Libplanet.RocksDBStore
             ulong? maxLogFileSize = null,
             int txEpochUnitSeconds = 86400,
             int blockEpochUnitSeconds = 86400,
-            int dbConnectionCacheSize = 100,
+            int dbConnectionCacheSize = 5,
             RocksDBInstanceType type = RocksDBInstanceType.Primary
         )
         {
